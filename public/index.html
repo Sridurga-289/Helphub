@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f5ed">
+  <meta name="description" content="Find good work happening near you. Discover local volunteer opportunities with HelpHub.">
+  <title>HelpHub | Good work, close to home</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <link rel="stylesheet" href="/styles.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="#home" aria-label="HelpHub home"><span class="brand-mark" aria-hidden="true">h</span><span>help<span class="brand-strong">hub</span></span></a>
+    <nav class="main-nav" aria-label="Main navigation">
+      <a class="nav-link active" href="#opportunities" data-view="discover">Nearby services</a>
+      <a class="nav-link" href="#my-activity" data-view="volunteer">My activity</a>
+      <a class="nav-link" href="#admin" data-view="admin">For organizers</a>
+    </nav>
+    <button class="header-cta" data-scroll-opportunities>Find your thing <span aria-hidden="true">↗</span></button>
+    <button class="menu-button" aria-label="Open navigation" aria-expanded="false"><span></span><span></span></button>
+  </header>
+
+  <main>
+    <section class="hero" id="home">
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="eyebrow-dot"></span> LOCAL CARE. REAL CONNECTION.</p>
+        <h1>Find Social<br><em>Services Near You.</em></h1>
+        <p class="hero-description">Explore community support, care organizations and volunteer opportunities around your chosen location.</p>
+        <div class="location-controls">
+          <button class="button button-dark detect-button" id="detect-location"><span aria-hidden="true">⌖</span> Detect my location</button>
+          <form id="manual-location-form" class="manual-location-form"><label class="sr-only" for="manual-location">Search a city, area or PIN code</label><input id="manual-location" name="location" autocomplete="postal-code" placeholder="City, area or PIN code" maxlength="120"><button type="submit" aria-label="Search location">↗</button></form>
+        </div>
+        <p class="location-status" id="location-status" aria-live="polite">Requesting your location…</p>
+        <div class="hero-proof"><div class="avatar-stack" aria-hidden="true"><span>R</span><span>A</span><span>M</span><span>+</span></div><span><strong id="hero-volunteer-count">Join your neighbours</strong><br>doing a little good together</span></div>
+      </div>
+      <div class="hero-art">
+        <img src="https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&w=1400&q=88" alt="Volunteers sorting fresh food together">
+        <div class="hero-note"><span class="note-spark">✳</span><span>Make room for<br><strong>good things.</strong></span></div>
+        <div class="hero-photo-label"><span class="live-dot"></span> LOCAL DISCOVERY, OPEN DATA</div>
+      </div>
+      <div class="hero-index" aria-hidden="true">01 / SHOW UP</div>
+    </section>
+
+    <section class="opportunities section-wrap" id="opportunities">
+      <div class="section-heading">
+        <div><p class="eyebrow">AROUND YOUR SEARCH AREA</p><h2>People doing <em>good.</em></h2></div>
+        <button class="text-link" id="refresh-discovery">Refresh results <span aria-hidden="true">↗</span></button>
+      </div>
+      <div class="discovery-tools">
+        <label class="search-field"><span class="search-icon" aria-hidden="true">⌕</span><input id="search-input" type="search" placeholder="Search services, causes or names" autocomplete="off"><kbd> / </kbd></label>
+        <label class="category-select"><span class="sr-only">Filter by category</span><select id="category-filter"><option value="">All services</option><option>NGOs &amp; Charities</option><option>Child Welfare</option><option>Elder Care</option><option>Food Support</option><option>Health &amp; Blood</option><option>Animal Welfare</option><option>Environment</option><option>Education</option><option>Community Services</option><option>Shelter &amp; Relief</option><option>Volunteer Events</option></select><span aria-hidden="true">⌄</span></label>
+        <label class="category-select radius-select"><span class="sr-only">Search radius</span><select id="radius-select"><option value="5">Within 5 km</option><option value="10" selected>Within 10 km</option><option value="25">Within 25 km</option><option value="50">Within 50 km</option></select><span aria-hidden="true">⌄</span></label>
+        <label class="category-select sort-select"><span class="sr-only">Sort results</span><select id="sort-select"><option value="distance">Nearest first</option><option value="name">Name A to Z</option></select><span aria-hidden="true">⌄</span></label>
+      </div>
+      <div class="category-chips" id="category-chips" aria-label="Filter services by category"></div>
+      <div class="results-toolbar"><div><strong id="result-count" aria-live="polite">Choose a location to begin</strong><span id="location-summary"></span></div><label class="open-filter" title="Only places with a supported, mapped opening-hours status"><input id="open-now-filter" type="checkbox" disabled><span>Open now</span><small id="open-filter-note">Opening status varies by listing</small></label><div class="view-toggle" role="group" aria-label="Choose results view"><button id="list-view-button" aria-pressed="true" aria-label="Show service list">☷</button><button id="map-view-button" aria-pressed="false" aria-label="Show map">⌖</button></div></div>
+      <p class="source-warning" id="source-warning" role="status" hidden></p>
+      <div class="discovery-layout"><div class="service-list" id="service-list" aria-live="polite"></div><div class="discovery-map-wrap"><div id="discovery-map" role="application" aria-label="Map of nearby social services"></div><div class="map-legend"><span><i class="legend-dot legend-help"></i> HelpHub</span><span><i class="legend-dot legend-osm"></i> OpenStreetMap</span><span><i class="legend-dot legend-event"></i> Volunteer event</span></div></div></div>
+      <div class="empty-state" id="empty-state" hidden><span class="empty-spark">✳</span><h3>No mapped services found.</h3><p>Try a wider radius or another area. Results depend on map coverage and HelpHub records.</p><button class="text-link" id="clear-filters">Clear filters <span aria-hidden="true">↗</span></button></div>
+      <button class="button button-dark load-more-button" id="load-more" hidden>Load more results <span aria-hidden="true">↓</span></button>
+      <p class="data-disclaimer" id="data-disclaimer">Results depend on OpenStreetMap coverage and HelpHub records. This search cannot guarantee that every local service has been mapped.</p>
+    </section>
+
+    <section class="impact-strip" aria-label="HelpHub community impact">
+      <div class="impact-intro"><span class="impact-icon">✳</span><span>GOOD ADDS UP.</span></div>
+      <div class="impact-metric"><strong id="impact-events">—</strong><span>ways to pitch in</span></div>
+      <div class="impact-metric"><strong id="impact-volunteers">—</strong><span>people showing up</span></div>
+      <div class="impact-metric"><strong id="impact-hours">—</strong><span>hours given freely</span></div>
+      <span class="impact-arrow" aria-hidden="true">↗</span>
+    </section>
+
+    <section class="closing section-wrap">
+      <div><p class="eyebrow">YOU DON’T HAVE TO DO IT ALL</p><h2>Just do <em>something.</em></h2></div>
+      <a class="button button-lime" href="#opportunities">See what’s nearby <span aria-hidden="true">↗</span></a>
+      <span class="closing-flower" aria-hidden="true">✳</span>
+    </section>
+  </main>
+
+  <footer class="site-footer"><a class="brand footer-brand" href="#home"><span class="brand-mark" aria-hidden="true">h</span><span>help<span class="brand-strong">hub</span></span></a><span>Connecting neighbours to care, community and ways to help.</span><span>Map data © OpenStreetMap contributors.</span></footer>
+
+  <dialog class="detail-dialog" id="event-dialog" aria-labelledby="detail-title"><button class="dialog-close" data-close-dialog aria-label="Close details">×</button><div id="detail-content"></div></dialog>
+  <dialog class="form-dialog" id="registration-dialog" aria-labelledby="registration-title"><button class="dialog-close" data-close-dialog aria-label="Close registration">×</button><div id="registration-content"></div></dialog>
+  <dialog class="dashboard-dialog" id="dashboard-dialog" aria-labelledby="dashboard-title"><button class="dialog-close" data-close-dialog aria-label="Close dashboard">×</button><div id="dashboard-content"></div></dialog>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

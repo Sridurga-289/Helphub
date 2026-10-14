@@ -1,0 +1,16 @@
+{
+  "name": "helphub",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A volunteer opportunity and community service platform",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "dotenv": "^18.0.7",
+    "mongodb": "^6.20.0"
+  }
+}
