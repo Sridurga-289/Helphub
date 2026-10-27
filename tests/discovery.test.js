@@ -72,6 +72,23 @@ test.before(async () => {
     const url = new URL(request.url, 'http://127.0.0.1');
     response.setHeader('Content-Type', 'application/json');
     if (url.pathname === '/search') {
+      if (url.searchParams.has('postalcode') && url.searchParams.get('country') === 'India') {
+        if (url.searchParams.get('postalcode') === '500084') {
+          response.end(JSON.stringify([]));
+          return;
+        }
+        response.end(JSON.stringify([
+          { lat: '17.4239', lon: '78.4204', name: 'Madhapur', display_name: 'Madhapur, Hyderabad, 500081', address: { suburb: 'Madhapur', city: 'Hyderabad', postcode: '500081' } },
+          { lat: '17.4', lon: '78.4', name: 'Different locality', address: { postcode: '500082' } }
+        ]));
+        return;
+      }
+      if (url.searchParams.get('q') === '500084, India') {
+        response.end(JSON.stringify([
+          { lat: '17.4239', lon: '78.4204', name: 'Madhapur', display_name: 'Madhapur, Hyderabad, 500084', address: { suburb: 'Madhapur' } }
+        ]));
+        return;
+      }
       response.end(JSON.stringify([{ lat: '17.4239', lon: '78.4204', name: 'Madhapur', display_name: 'Madhapur, Hyderabad', address: { suburb: 'Madhapur' } }]));
       return;
     }
@@ -128,6 +145,21 @@ test('manual location search resolves an Indian locality and reverse lookup name
   const { response, payload } = await requestJson(`http://127.0.0.1:${appPort}/api/location/reverse?lat=17.4239&lon=78.4204`);
   assert.equal(response.status, 200);
   assert.equal(payload.label, 'Madhapur');
+});
+
+test('manual PIN-code search uses an exact Indian postal-code match', async () => {
+  const { response, payload } = await requestJson(`http://127.0.0.1:${appPort}/api/location/search?q=500081`);
+  assert.equal(response.status, 200);
+  assert.deepEqual([payload.latitude, payload.longitude, payload.label], [17.4239, 78.4204, 'Madhapur (500081)']);
+  const formatted = await requestJson(`http://127.0.0.1:${appPort}/api/location/search?q=500%20081`);
+  assert.equal(formatted.response.status, 200);
+  assert.equal(formatted.payload.label, 'Madhapur (500081)');
+  const fallback = await requestJson(`http://127.0.0.1:${appPort}/api/location/search?q=500084`);
+  assert.equal(fallback.response.status, 200);
+  assert.equal(fallback.payload.label, 'Madhapur (500084)');
+  const unmatched = await requestJson(`http://127.0.0.1:${appPort}/api/location/search?q=500083`);
+  assert.equal(unmatched.response.status, 404);
+  assert.match(unmatched.payload.error, /six-digit code|locality/);
 });
 
 test('database health does not report preview mode as a successful MongoDB connection', async () => {

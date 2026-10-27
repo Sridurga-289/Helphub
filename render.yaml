@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: helphub
+    runtime: node
+    region: singapore
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: MONGODB_URI
+        sync: false
+      - key: MONGODB_DATABASE
+        value: helphub
+      - key: ADMIN_TOKEN
+        sync: false

@@ -55,6 +55,15 @@ When `MONGODB_URI` is blank or still contains the template placeholders, the ser
 
 `db.js` loads `.env`, connects once with the official MongoDB Node.js driver, verifies the connection with `ping`, creates the registration and geospatial indexes, and exposes a health check. The first MongoDB-backed startup adds clearly marked sample opportunities only when `events` is empty. Existing matching sample events receive their sample coordinates if they have no geospatial point yet.
 
+## Deploy on Render
+
+1. Push this repository to GitHub and open [Render Blueprints](https://dashboard.render.com/blueprints).
+2. Connect `Sridurga-289/Helphub` and create the web service from `render.yaml`.
+3. Enter your MongoDB Atlas connection string for `MONGODB_URI` and a private random value for `ADMIN_TOKEN` when prompted. Keep both values private.
+4. Wait for the deploy to finish, then open the generated `onrender.com` URL. The root page is the service health check; `/api/health` reports `503` when MongoDB is not connected.
+
+The Blueprint uses Render's free web service in Singapore. Free services may sleep while idle; MongoDB Atlas is still required for persistent events, organizations, and registrations. Do not use preview mode for real volunteer data.
+
 ## What you can do
 
 - Search opportunities by name, description, and location; filter by cause.

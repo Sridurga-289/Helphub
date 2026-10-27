@@ -320,14 +320,57 @@ async function reverseGeocode(latitude, longitude) {
 
 async function searchLocation(query) {
   const url = new URL('/search', NOMINATIM_URL);
-  url.search = new URLSearchParams({ format: 'jsonv2', q: query.slice(0, 120), limit: '1', countrycodes: 'in', addressdetails: '1' });
-  const response = await fetchNominatim(url);
-  if (!response.ok) throw new Error('Location search is temporarily unavailable. Try again in a moment.');
-  const results = await response.json();
-  const match = results[0];
-  if (!match || !Number.isFinite(Number(match.lat)) || !Number.isFinite(Number(match.lon))) throw Object.assign(new Error('We could not find that place in the available map data.'), { status: 404 });
+  const pinCode = query.replace(/[\s-]/g, '');
+  const isPinCode = /^\d{6}$/.test(pinCode);
+  const params = new URLSearchParams({
+    format: 'jsonv2',
+    limit: isPinCode ? '5' : '1',
+    countrycodes: 'in',
+    addressdetails: '1'
+  });
+  if (isPinCode) {
+    params.set('postalcode', pinCode);
+    params.set('country', 'India');
+  } else {
+    params.set('q', query.slice(0, 120));
+  }
+  url.search = params;
+  const fetchResults = async () => {
+    const response = await fetchNominatim(url);
+    if (!response.ok) throw new Error('Location search is temporarily unavailable. Try again in a moment.');
+    const results = await response.json();
+    return Array.isArray(results) ? results : [];
+  };
+  let matches = await fetchResults();
+  const matchesPinCode = (result) => {
+    const postcode = String(result.address?.postcode || '');
+    const displayName = String(result.display_name || '');
+    return postcode.split(/\D+/).includes(pinCode) || new RegExp(`(^|\\D)${pinCode}(\\D|$)`).test(displayName);
+  };
+  let match = isPinCode ? matches.find(matchesPinCode) : matches[0];
+  if (isPinCode && !match) {
+    params.delete('postalcode');
+    params.set('q', `${pinCode}, India`);
+    url.search = params;
+    matches = await fetchResults();
+    match = matches.find(matchesPinCode);
+  }
+  const latitude = Number(match?.lat);
+  const longitude = Number(match?.lon);
+  if (!match || !Number.isFinite(latitude) || latitude < -90 || latitude > 90 || !Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
+    const message = isPinCode
+      ? 'We could not find that Indian PIN code in the available map data. Check the six-digit code or search by locality.'
+      : 'We could not find that place in the available map data.';
+    throw Object.assign(new Error(message), { status: 404 });
+  }
   const address = match.address || {};
-  return { latitude: Number(match.lat), longitude: Number(match.lon), label: address.suburb || address.neighbourhood || address.city || address.town || address.village || match.name || query, displayName: match.display_name || '' };
+  const locality = address.suburb || address.neighbourhood || address.city || address.town || address.village || address.county || address.state_district || match.name || query;
+  return {
+    latitude,
+    longitude,
+    label: isPinCode ? `${locality} (${pinCode})` : locality,
+    displayName: match.display_name || ''
+  };
 }
 
 function validEvent(input) {
